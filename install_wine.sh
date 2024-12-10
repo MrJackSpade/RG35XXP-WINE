@@ -1,76 +1,86 @@
-# Set system time using Google's server timestamp
-date -s "$(wget -qSO- --max-redirect=0 google.com 2>&1 | grep Date: | cut -d' ' -f5-8)Z"
+SCRIPT_DIR=$(dirname "$0")
+LOG_FILE="$SCRIPT_DIR/wine_install.log"
 
-# Add ARM hardware float architecture support
-dpkg --add-architecture armhf
-apt update
-# Install required dependencies including ARM libraries, build tools, and graphics libraries
-apt install -y libc6:armhf cmake gcc-arm-linux-gnueabihf xorg libncurses6 cabextract libncurses6:armhf libpng-dev:armhf libvulkan1 vulkan-tools vulkan-validationlayers libgl1-mesa-dri libgl1-mesa-glx libvulkan1:armhf mesa-vulkan-drivers:armhf  libgl1:armhf libglvnd0:armhf libglx-mesa0:armhf libglx0:armhf libx11-xcb1:armhf libxcb-dri2-0:armhf libxcb-glx0:armhf libxcb-present0:armhf libxcb-randr0:armhf libxcb-sync1:armhf libxcb-xfixes0:armhf libxshmfence1:armhf libxxf86vm1:armhf libgl1-mesa-dri:armhf libgl1:armhf qjoypad libxrandr2:armhf libxcomposite1:armhf
+echo "[$(date)] Starting Wine installation script" >> "$LOG_FILE"
 
-# Download and extract Wine i386 packages
-wget https://dl.winehq.org/wine-builds/debian/dists/bookworm/main/binary-i386/wine-stable-i386_8.0.2~bookworm-1_i386.deb
-dpkg-deb -xv wine-stable-i386_8.0.2~bookworm-1_i386.deb /root/wine-installer
-rm wine-stable-i386_8.0.2~bookworm-1_i386.deb
+echo "[$(date)] Setting system time using Google's server" >> "$LOG_FILE"
+date -s "$(wget -qSO- --max-redirect=0 google.com 2>&1 | grep Date: | cut -d' ' -f5-8)Z" >> "$LOG_FILE" 2>&1
 
-wget https://dl.winehq.org/wine-builds/debian/dists/bookworm/main/binary-i386/wine-stable_8.0.2~bookworm-1_i386.deb
-dpkg-deb -xv wine-stable_8.0.2~bookworm-1_i386.deb /root/wine-installer
-rm wine-stable_8.0.2~bookworm-1_i386.deb
+echo "[$(date)] Adding ARM hardware float architecture support" >> "$LOG_FILE"
+dpkg --add-architecture armhf >> "$LOG_FILE" 2>&1
 
-# Move Wine files to final location and cleanup
-mv /root/wine-installer/opt/wine-stable /root/wine
-rm -rf /root/wine-installer
+echo "[$(date)] Updating package lists" >> "$LOG_FILE"
+apt update >> "$LOG_FILE" 2>&1
 
-# Create Wine wrapper scripts that use box86
+echo "[$(date)] Installing required dependencies" >> "$LOG_FILE"
+apt install -y libc6:armhf cmake gcc-arm-linux-gnueabihf xorg libncurses6 cabextract libncurses6:armhf libpng-dev:armhf libvulkan1 vulkan-tools vulkan-validationlayers libgl1-mesa-dri libgl1-mesa-glx libvulkan1:armhf mesa-vulkan-drivers:armhf  libgl1:armhf libglvnd0:armhf libglx-mesa0:armhf libglx0:armhf libx11-xcb1:armhf libxcb-dri2-0:armhf libxcb-glx0:armhf libxcb-present0:armhf libxcb-randr0:armhf libxcb-sync1:armhf libxcb-xfixes0:armhf libxshmfence1:armhf libxxf86vm1:armhf libgl1-mesa-dri:armhf libgl1:armhf qjoypad libxrandr2:armhf libxcomposite1:armhf >> "$LOG_FILE" 2>&1
+
+echo "[$(date)] Downloading Wine i386 packages" >> "$LOG_FILE"
+wget https://dl.winehq.org/wine-builds/debian/dists/bookworm/main/binary-i386/wine-stable-i386_8.0.2~bookworm-1_i386.deb >> "$LOG_FILE" 2>&1
+echo "[$(date)] Extracting first Wine package" >> "$LOG_FILE"
+dpkg-deb -xv wine-stable-i386_8.0.2~bookworm-1_i386.deb /root/wine-installer >> "$LOG_FILE" 2>&1
+rm wine-stable-i386_8.0.2~bookworm-1_i386.deb >> "$LOG_FILE" 2>&1
+
+echo "[$(date)] Downloading second Wine package" >> "$LOG_FILE"
+wget https://dl.winehq.org/wine-builds/debian/dists/bookworm/main/binary-i386/wine-stable_8.0.2~bookworm-1_i386.deb >> "$LOG_FILE" 2>&1
+echo "[$(date)] Extracting second Wine package" >> "$LOG_FILE"
+dpkg-deb -xv wine-stable_8.0.2~bookworm-1_i386.deb /root/wine-installer >> "$LOG_FILE" 2>&1
+rm wine-stable_8.0.2~bookworm-1_i386.deb >> "$LOG_FILE" 2>&1
+
+echo "[$(date)] Moving Wine files to final location" >> "$LOG_FILE"
+mv /root/wine-installer/opt/wine-stable /root/wine >> "$LOG_FILE" 2>&1
+rm -rf /root/wine-installer >> "$LOG_FILE" 2>&1
+
+echo "[$(date)] Creating Wine wrapper scripts" >> "$LOG_FILE"
 echo '#!/bin/bash' > /usr/local/bin/wine
 echo 'box86 /root/wine/bin/wine "$@"' >> /usr/local/bin/wine
-chmod +x /usr/local/bin/wine
+chmod +x /usr/local/bin/wine >> "$LOG_FILE" 2>&1
 
 echo '#!/bin/bash' > /usr/local/bin/wineboot
 echo 'box86 /root/wine/bin/wineboot "$@"' >> /usr/local/bin/wineboot
-chmod +x /usr/local/bin/wineboot
+chmod +x /usr/local/bin/wineboot >> "$LOG_FILE" 2>&1
 
 echo '#!/bin/bash' > /usr/local/bin/winecfg
 echo 'box86 /root/wine/bin/winecfg "$@"' >> /usr/local/bin/winecfg
-chmod +x /usr/local/bin/winecfg
+chmod +x /usr/local/bin/winecfg >> "$LOG_FILE" 2>&1
 
 echo '#!/bin/bash' > /usr/local/bin/wineserver
 echo 'box86 /root/wine/bin/wineserver "$@"' >> /usr/local/bin/wineserver
-chmod +x /usr/local/bin/wineserver
+chmod +x /usr/local/bin/wineserver >> "$LOG_FILE" 2>&1
 
-# Download and install Winetricks
-wget https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks
-chmod +x winetricks && mv winetricks /usr/local/bin/
+echo "[$(date)] Downloading and installing Winetricks" >> "$LOG_FILE"
+wget https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks >> "$LOG_FILE" 2>&1
+chmod +x winetricks && mv winetricks /usr/local/bin/ >> "$LOG_FILE" 2>&1
 
-#
-# Build and install box86 (x86 emulator for ARM)
-git clone https://github.com/ptitSeb/box86
-cd box86
-mkdir build; cd build; cmake .. -DRPI4ARM64=1 -DCMAKE_BUILD_TYPE=RelWithDebInfo
-#this breaks diablo?
-#mkdir build; cd build; cmake .. -DA64=1 -DARM_DYNAREC=1 -DCMAKE_BUILD_TYPE=RelWithDebInfo
-make -j2
-make install
-sudo systemctl restart systemd-binfmt
-cd ../..
-rm -rf box86
+echo "[$(date)] Cloning box86 repository" >> "$LOG_FILE"
+git clone https://github.com/ptitSeb/box86 >> "$LOG_FILE" 2>&1
+cd box86 >> "$LOG_FILE" 2>&1
+echo "[$(date)] Building box86" >> "$LOG_FILE"
+mkdir build; cd build; cmake .. -DRPI4ARM64=1 -DCMAKE_BUILD_TYPE=RelWithDebInfo >> "$LOG_FILE" 2>&1
+make -j2 >> "$LOG_FILE" 2>&1
+make install >> "$LOG_FILE" 2>&1
+echo "[$(date)] Restarting systemd-binfmt" >> "$LOG_FILE"
+systemctl restart systemd-binfmt >> "$LOG_FILE" 2>&1
+cd ../.. >> "$LOG_FILE" 2>&1
+rm -rf box86 >> "$LOG_FILE" 2>&1
 
-# Build and install FreeType font engine
-wget https://download.savannah.gnu.org/releases/freetype/freetype-2.10.1.tar.gz
-tar xf freetype-2.10.1.tar.gz
-cd freetype-2.10.1
-./configure --host=arm-linux-gnueabihf --prefix=/usr
-make -j4
-make install
-cd ..
-rm -rf freetype*
+echo "[$(date)] Building FreeType font engine" >> "$LOG_FILE"
+wget https://download.savannah.gnu.org/releases/freetype/freetype-2.10.1.tar.gz >> "$LOG_FILE" 2>&1
+tar xf freetype-2.10.1.tar.gz >> "$LOG_FILE" 2>&1
+cd freetype-2.10.1 >> "$LOG_FILE" 2>&1
+./configure --host=arm-linux-gnueabihf --prefix=/usr >> "$LOG_FILE" 2>&1
+make -j4 >> "$LOG_FILE" 2>&1
+make install >> "$LOG_FILE" 2>&1
+cd .. >> "$LOG_FILE" 2>&1
+rm -rf freetype* >> "$LOG_FILE" 2>&1
 
-# Set display for X server
+echo "[$(date)] Setting display for X server" >> "$LOG_FILE"
 export DISPLAY=:0
 
-# Initialize new Wine prefix
-rm -rf /root/.wine
-WINEPREFIX="$HOME/.wine"
-export WINEPREFIX="$HOME/.wine"
+echo "[$(date)] Initializing Wine environment" >> "$LOG_FILE"
+rm -rf /root/.wine >> "$LOG_FILE" 2>&1
+WINEPREFIX="/root/.wine"
+export WINEPREFIX="/root/.wine"
 export WINEDEBUG=-all
 export WINE_MONO_SILENT_INSTALL=1
 export WINE_GECKO_SILENT_INSTALL=1
@@ -78,19 +88,16 @@ export BOX86_LD_LIBRARY_PATH=/usr/lib/arm-linux-gnueabihf/
 export BOX86_GL=1
 export BOX86_VULKAN=1
 
-# Initialize Wine environment
-wine wineboot --init
+echo "[$(date)] Running Wine boot initialization" >> "$LOG_FILE"
+wine wineboot --init >> "$LOG_FILE" 2>&1
 
-# Configure Wine settings
-# Set Windows version to XP
-wine reg add "HKEY_CURRENT_USER\Software\Wine\Version" /v Windows /t REG_SZ /d "winxp" /f
-# Map D: drive to SD card
-wine reg add "HKEY_LOCAL_MACHINE\System\MountPoints2\D:" /v "Path" /t REG_SZ /d "/mnt/sdcard" /f
-# Set default resolution
-wine reg ADD "HKCU\\Software\Wine\Explorer\Desktops" /v Default /d 640x480
-wine reg ADD "HKCU\\Software\Wine\Explorer" /v Desktop /d Default
+echo "[$(date)] Configuring Wine settings" >> "$LOG_FILE"
+wine reg add "HKEY_CURRENT_USER\Software\Wine\Version" /v Windows /t REG_SZ /d "winxp" /f >> "$LOG_FILE" 2>&1
+wine reg add "HKEY_LOCAL_MACHINE\System\MountPoints2\D:" /v "Path" /t REG_SZ /d "/mnt/sdcard" /f >> "$LOG_FILE" 2>&1
+wine reg ADD "HKCU\\Software\Wine\Explorer\Desktops" /v Default /d 640x480 >> "$LOG_FILE" 2>&1
+wine reg ADD "HKCU\\Software\Wine\Explorer" /v Desktop /d Default >> "$LOG_FILE" 2>&1
 
-# Update drives configuration
+echo "[$(date)] Updating drives configuration" >> "$LOG_FILE"
 cat > "$WINEPREFIX/system.reg" << EOF
 WINE REGISTRY Version 2
 ;; All keys relative to \\\\REGISTRY\\\\MACHINE\\\\Software\\\\Wine\\\\
@@ -99,20 +106,20 @@ win
 "Path"="/mnt/sdcard"
 EOF
 
-ln -sf /mnt/sdcard "$WINEPREFIX/dosdevices/d:"
+ln -sf /mnt/sdcard "$WINEPREFIX/dosdevices/d:" >> "$LOG_FILE" 2>&1
 
-# Force Wine configuration update
-wine wineboot -u
+echo "[$(date)] Forcing Wine configuration update" >> "$LOG_FILE"
+wine wineboot -u >> "$LOG_FILE" 2>&1
 
-# Kill any remaining Wine processes
-wineserver -k
+echo "[$(date)] Killing remaining Wine processes" >> "$LOG_FILE"
+wineserver -k >> "$LOG_FILE" 2>&1
 
-winetricks d3dx9
+echo "[$(date)] Installing Winetricks components" >> "$LOG_FILE"
+winetricks d3dx9 vb6run >> "$LOG_FILE" 2>&1
 
-# Create directory if it doesn't exist
-mkdir -p /root/.qjoypad3
+echo "[$(date)] Creating QJoyPad configuration" >> "$LOG_FILE"
+mkdir -p /root/.qjoypad3 >> "$LOG_FILE" 2>&1
 
-# Create the layout file
 cat > /root/.qjoypad3/default.lyt << 'EOL'
 # QJoyPad 4.3 Layout File
 
@@ -133,12 +140,14 @@ Joystick 1 {
 }
 EOL
 
-cp -r /root/.qjoypad3 /.qjoypad3
+echo "[$(date)] Copying QJoyPad configuration" >> "$LOG_FILE"
+cp -r /root/.qjoypad3 /.qjoypad3 >> "$LOG_FILE" 2>&1
 
-XZ_OPT=-9 tar -Jcvf /root/wine.recovery.tar.xz /root/.wine
+echo "[$(date)] Creating Wine recovery archive" >> "$LOG_FILE"
+XZ_OPT=-9 tar -Jcvf /root/wine.recovery.tar.xz /root/.wine >> "$LOG_FILE" 2>&1
 
-# Create the launch file
-cat > /mnt/mmc/Roms/APPS/wine.sh << 'EOL'
+echo "[$(date)] Creating Wine launch script" >> "$LOG_FILE"
+cat > $SCRIPT_DIR/wine.sh << 'EOL'
 cd /root
 
 echo "[$(date)] Starting wine startup script" >> /tmp/wine_startup.log
@@ -191,3 +200,5 @@ trap "kill $MONITOR_PID 2>/dev/null" EXIT
 
 echo "[$(date)] Script completed" >> /tmp/wine_startup.log
 EOL
+
+echo "[$(date)] Wine installation completed" >> "$LOG_FILE"
