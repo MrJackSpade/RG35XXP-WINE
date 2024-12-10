@@ -18,6 +18,12 @@ This script automates the installation and configuration of Wine on the RG35XX P
 - Internet connection for downloading packages
 - Sufficient storage space (approximately 1GB)
 
+## Tested
+- Fallout 1
+- Diablo 2
+- Starcraft 
+- Warcraft 3 
+
 ## Installation
 
 1. Copy the script to your device
