@@ -202,7 +202,7 @@ killall qjoypad >> /tmp/wine_startup.log 2>&1
 echo "[$(date)] Script completed" >> /tmp/wine_startup.log
 EOL
 
-echo start \"\" \"c:\\windows\\explorer.exe\" > ".wine/drive_c/ProgramData/Microsoft/Windows/Start Menu/explorer.bat"
+echo start \"\" \"c:\\windows\\explorer.exe\" > "/root/.wine/drive_c/ProgramData/Microsoft/Windows/Start Menu/explorer.bat"
 
 cat > $SCRIPT_DIR/wine_mount_isos.sh << 'EOL'
 #!/bin/bash
