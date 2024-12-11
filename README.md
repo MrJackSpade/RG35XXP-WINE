@@ -8,6 +8,7 @@ This script automates the installation and configuration of Wine on the RG35XX P
 - Diablo 2 ✅
 - Starcraft ✅
 - Warcraft 3 ⚠️
+- Sim City 3000 Unlimited ✅
 
 > [!WARNING]
 >  This is a preview build intended for tinkerers comfortable with Wine. Due to the complexity, it may not progress beyond this stage. Not everything will be plug-and-play due to Wine limitations.
