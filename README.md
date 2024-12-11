@@ -46,7 +46,7 @@ This script automates the installation and configuration of Wine on the RG35XX P
 3. Wait for the installation to complete
 
 > [!NOTE]
-> Installation process can take 30-45 minutes depending on your internet connection
+> Installation process can take 90-120 minutes depending on your internet connection. This will be reduced for future versions
 
 ## Usage
 
