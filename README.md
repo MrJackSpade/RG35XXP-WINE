@@ -19,6 +19,7 @@ This script automates the installation and configuration of Wine on the RG35XX P
 > - Automatic ISO mounting /mnt/sdcard/wine/isos (wine_mount_isos.sh)
 > - Changed D root to /mnt/mmc/sdcard/wine/d
 > - Fixed language (text) issues
+> - Removed intermediate terminal screen, now boots directly into shell
 
 ## Features
 
@@ -72,7 +73,6 @@ The script will:
 > [!WARNING]
 > 
 > - Improper shutdown can cause Wine to corrupt its configuration files, requiring a restore from backup
-> - There is an intentional 20-second delay between X server start and Wine launch due to session detection limitations
 > - Some applications may require manual Winetricks configuration
 > - Wine shell closes once the last application exits. This is apparently a limitation of WINE itself, so unfortunately I can't do anything about it
 
