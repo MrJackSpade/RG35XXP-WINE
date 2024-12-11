@@ -151,6 +151,7 @@ XZ_OPT=-9 tar -Jcvf /root/wine.recovery.tar.xz /root/.wine >> "$LOG_FILE" 2>&1
 
 echo "[$(date)] Creating Wine launch script" >> "$LOG_FILE"
 cat > $SCRIPT_DIR/wine_desktop.sh << 'EOL'
+#!/bin/bash
 cd /root
 
 echo "[$(date)] Starting wine startup script" >> /tmp/wine_startup.log
@@ -161,13 +162,6 @@ pkill startx >> /tmp/wine_startup.log 2>&1
 
 echo "[$(date)] Setting WINEPREFIX to /root/.wine" >> /tmp/wine_startup.log
 export WINEPREFIX=/root/.wine
-
-echo "[$(date)] Starting X server" >> /tmp/wine_startup.log
-#export STARTUP=/path/to/your/preferred/program
-startx >> /tmp/wine_startup.log 2>&1 &
-
-echo "[$(date)] Waiting 30 seconds for X server to initialize" >> /tmp/wine_startup.log
-sleep 5
 
 echo "[$(date)] Setting DISPLAY variable" >> /tmp/wine_startup.log
 export DISPLAY=:0
@@ -193,14 +187,17 @@ is_qjoypad_running() {
 # Store the monitor process ID
 MONITOR_PID=$!
 
-echo "[$(date)] Starting Wine Explorer" >> /tmp/wine_startup.log
-LANGUAGE=en_US LANG=en_US wine explorer.exe /desktop=shell,640x480 >> /tmp/wine_startup.log 2>&1
+echo "[$(date)] Starting X server" >> /tmp/wine_startup.log
+export LANGUAGE=en_US
+export LANG=en_US
+export STARTUP="wine explorer.exe /desktop=shell,640x480"
+startx >> /tmp/wine_startup.log 2>&1
 
-echo "[$(date)] Wine Explorer exited, cleaning up processes" >> /tmp/wine_startup.log
-killall startx >> /tmp/wine_startup.log 2>&1
-killall qjoypad >> /tmp/wine_startup.log 2>&1
+echo "[$(date)] Xorg exited, cleaning up processes" >> /tmp/wine_startup.log
+
 # Make sure to clean up the monitor process when the script exits
 trap "kill $MONITOR_PID 2>/dev/null" EXIT
+killall qjoypad >> /tmp/wine_startup.log 2>&1
 
 echo "[$(date)] Script completed" >> /tmp/wine_startup.log
 EOL
