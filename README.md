@@ -3,6 +3,11 @@
 This script automates the installation and configuration of Wine on the RG35XX Plus, allowing you to run Windows applications and games on your device.
 
 > **Note**: This is a preview build intended for tinkerers comfortable with Wine. Due to the complexity, it may not progress beyond this stage. Not everything will be plug-and-play due to Wine limitations.
+>
+> 2024-12-10 updates
+> Automatic ISO mounting /mnt/sdcard/wine/isos (wine_mount_isos.sh)
+> Changed D root to /mnt/mmc/sdcard/wine/d
+> Fixed language (text) issues
 
 ## Features
 
@@ -16,7 +21,7 @@ This script automates the installation and configuration of Wine on the RG35XX P
 
 ## Prerequisites
 
-- RG35XX Plus running stock OS
+- RG35XX+ (or variant) running stock OS
 - Internet connection for downloading packages
 - Sufficient storage space (approximately 1GB)
 
@@ -41,7 +46,11 @@ This script automates the installation and configuration of Wine on the RG35XX P
 
 After installation, you can launch Wine through:
 ```
-/mnt/mmc/Roms/APPS/wine.sh
+/mnt/mmc/Roms/APPS/wine_desktop.sh
+```
+Any ISO's within the directory /mnt/sdcard/wine/isos can be mounted by calling
+```
+/mnt/mmc/Roms/APPS/wine_mount_isos.sh
 ```
 
 The script will:
@@ -57,6 +66,7 @@ The script will:
 - Improper shutdown can cause Wine to corrupt its configuration files, requiring a restore from backup
 - There is an intentional 20-second delay between X server start and Wine launch due to session detection limitations
 - Some applications may require manual Winetricks configuration
+- Wine shell closes once the last application exits. This is apparently a limitation of WINE itself, so unfortunately I can't do anything about it
 
 ## Controller Mapping
 
