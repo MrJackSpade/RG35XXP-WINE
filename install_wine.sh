@@ -56,8 +56,8 @@ echo "[$(date)] Cloning box86 repository" >> "$LOG_FILE"
 git clone https://github.com/ptitSeb/box86 >> "$LOG_FILE" 2>&1
 cd box86 >> "$LOG_FILE" 2>&1
 echo "[$(date)] Building box86" >> "$LOG_FILE"
-mkdir build; cd build; cmake .. -DRPI4ARM64=1 -DCMAKE_BUILD_TYPE=RelWithDebInfo >> "$LOG_FILE" 2>&1
-make -j2 >> "$LOG_FILE" 2>&1
+mkdir build; cd build; cmake .. -DA64=1 -DARM_DYNAREC=1 -DCMAKE_BUILD_TYPE=RelWithDebInfo >> "$LOG_FILE" 2>&1
+make -j1 >> "$LOG_FILE" 2>&1
 make install >> "$LOG_FILE" 2>&1
 echo "[$(date)] Restarting systemd-binfmt" >> "$LOG_FILE"
 systemctl restart systemd-binfmt >> "$LOG_FILE" 2>&1
@@ -93,9 +93,7 @@ wine wineboot --init >> "$LOG_FILE" 2>&1
 
 echo "[$(date)] Configuring Wine settings" >> "$LOG_FILE"
 wine reg add "HKEY_CURRENT_USER\Software\Wine\Version" /v Windows /t REG_SZ /d "winxp" /f >> "$LOG_FILE" 2>&1
-wine reg add "HKEY_LOCAL_MACHINE\System\MountPoints2\D:" /v "Path" /t REG_SZ /d "/mnt/sdcard" /f >> "$LOG_FILE" 2>&1
-wine reg ADD "HKCU\\Software\Wine\Explorer\Desktops" /v Default /d 640x480 >> "$LOG_FILE" 2>&1
-wine reg ADD "HKCU\\Software\Wine\Explorer" /v Desktop /d Default >> "$LOG_FILE" 2>&1
+wine reg add "HKEY_LOCAL_MACHINE\System\MountPoints2\D:" /v "Path" /t REG_SZ /d "/mnt/sdcard/wine/d" /f >> "$LOG_FILE" 2>&1
 
 echo "[$(date)] Updating drives configuration" >> "$LOG_FILE"
 cat > "$WINEPREFIX/system.reg" << EOF
@@ -103,10 +101,10 @@ WINE REGISTRY Version 2
 ;; All keys relative to \\\\REGISTRY\\\\MACHINE\\\\Software\\\\Wine\\\\
 win
 [System\\\\MountPoints2\\\\D:]
-"Path"="/mnt/sdcard"
+"Path"="/mnt/sdcard/wine/d"
 EOF
 
-ln -sf /mnt/sdcard "$WINEPREFIX/dosdevices/d:" >> "$LOG_FILE" 2>&1
+ln -sf /mnt/sdcard/wine/d "$WINEPREFIX/dosdevices/d:" >> "$LOG_FILE" 2>&1
 
 echo "[$(date)] Forcing Wine configuration update" >> "$LOG_FILE"
 wine wineboot -u >> "$LOG_FILE" 2>&1
@@ -116,6 +114,11 @@ wineserver -k >> "$LOG_FILE" 2>&1
 
 echo "[$(date)] Installing Winetricks components" >> "$LOG_FILE"
 winetricks d3dx9 vb6run >> "$LOG_FILE" 2>&1
+
+echo "[$(date)] Installing WineMono components" >> "$LOG_FILE"
+wget https://dl.winehq.org/wine/wine-mono/9.4.0/wine-mono-9.4.0-x86.msi --no-check-certificate
+wine msiexec /i wine-mono-9.4.0-x86.msi
+rm wine-mono-9.4.0-x86.msi
 
 echo "[$(date)] Creating QJoyPad configuration" >> "$LOG_FILE"
 mkdir -p /root/.qjoypad3 >> "$LOG_FILE" 2>&1
@@ -147,7 +150,7 @@ echo "[$(date)] Creating Wine recovery archive" >> "$LOG_FILE"
 XZ_OPT=-9 tar -Jcvf /root/wine.recovery.tar.xz /root/.wine >> "$LOG_FILE" 2>&1
 
 echo "[$(date)] Creating Wine launch script" >> "$LOG_FILE"
-cat > $SCRIPT_DIR/wine.sh << 'EOL'
+cat > $SCRIPT_DIR/wine_desktop.sh << 'EOL'
 cd /root
 
 echo "[$(date)] Starting wine startup script" >> /tmp/wine_startup.log
@@ -160,6 +163,7 @@ echo "[$(date)] Setting WINEPREFIX to /root/.wine" >> /tmp/wine_startup.log
 export WINEPREFIX=/root/.wine
 
 echo "[$(date)] Starting X server" >> /tmp/wine_startup.log
+#export STARTUP=/path/to/your/preferred/program
 startx >> /tmp/wine_startup.log 2>&1 &
 
 echo "[$(date)] Waiting 30 seconds for X server to initialize" >> /tmp/wine_startup.log
@@ -190,7 +194,7 @@ is_qjoypad_running() {
 MONITOR_PID=$!
 
 echo "[$(date)] Starting Wine Explorer" >> /tmp/wine_startup.log
-wine explorer >> /tmp/wine_startup.log 2>&1
+LANGUAGE=en_US LANG=en_US wine explorer.exe /desktop=shell,640x480 >> /tmp/wine_startup.log 2>&1
 
 echo "[$(date)] Wine Explorer exited, cleaning up processes" >> /tmp/wine_startup.log
 killall startx >> /tmp/wine_startup.log 2>&1
@@ -199,6 +203,96 @@ killall qjoypad >> /tmp/wine_startup.log 2>&1
 trap "kill $MONITOR_PID 2>/dev/null" EXIT
 
 echo "[$(date)] Script completed" >> /tmp/wine_startup.log
+EOL
+
+echo start \"\" \"c:\\windows\\explorer.exe\" > ".wine/drive_c/ProgramData/Microsoft/Windows/Start Menu/explorer.bat"
+
+cat > $SCRIPT_DIR/wine_mount_isos.sh << 'EOL'
+#!/bin/bash
+
+cd /root
+
+LOG_FILE="/tmp/wine_mount.log"
+
+echo "[$(date)] Starting Wine ISO mount script" >> "$LOG_FILE"
+
+# Cleanup/Unmount section
+if [ -d "/root/virtualdrive" ]; then
+    echo "[$(date)] Starting cleanup of existing mounts" >> "$LOG_FILE"
+    
+    # Unmount all drives
+    umount /root/virtualdrive/Drive* 2>> "$LOG_FILE"
+    echo "[$(date)] Unmounted existing drives" >> "$LOG_FILE"
+
+    # Remove mount points
+    rm -rf /root/virtualdrive/Drive*
+    echo "[$(date)] Removed mount points" >> "$LOG_FILE"
+
+    # Remove existing Wine drive mappings and symlinks
+    DOSDEVICES="/root/.wine/dosdevices"
+    WINEPREFIX="/root/.wine"
+    
+    for drive in "$DOSDEVICES"/*:; do
+        if [ -L "$drive" ]; then  # If it's a symlink
+            letter=$(basename "$drive" | cut -d':' -f1)
+            # Skip c:, d:, and z: drives
+            if [[ "$letter" != "c" && "$letter" != "d" && "$letter" != "z" ]]; then
+                wine reg delete "HKEY_LOCAL_MACHINE\\Software\\Wine\\Drives" /v "${letter}:" /f 2>> "$LOG_FILE"
+                rm -f "$drive"
+                echo "[$(date)] Removed Wine drive mapping for ${letter}:" >> "$LOG_FILE"
+            fi
+        fi
+    done
+fi
+
+# Mount section
+if [ -d "/mnt/sdcard/wine/isos" ]; then
+    echo "[$(date)] Starting mount of ISOs" >> "$LOG_FILE"
+    
+    ISO_DIR="/mnt/sdcard/wine/isos"
+    MOUNT_BASE="/root/virtualdrive"
+    DOSDEVICES="/root/.wine/dosdevices"
+
+    mkdir -p "$MOUNT_BASE"
+    echo "[$(date)] Created mount base directory: $MOUNT_BASE" >> "$LOG_FILE"
+
+    # Counter for drive letters (starting from e:)
+    drive_letter=101  # 101 corresponds to 'e' in ASCII
+
+    for iso in "$ISO_DIR"/*.iso; do
+        if [ -f "$iso" ]; then
+            filename=$(basename "$iso")
+            mount_point="$MOUNT_BASE/Drive$drive_letter"
+            mkdir -p "$mount_point"
+            echo "[$(date)] Created mount point: $mount_point" >> "$LOG_FILE"
+
+            mount -o loop "$iso" "$mount_point"
+            
+            if [ $? -eq 0 ]; then
+                # Convert drive_letter number to lowercase letter (101->e, 102->f, etc.)
+                letter=$(printf \\$(printf '%03o' $drive_letter))
+                
+                # Add drive to Wine configuration
+                WINEPREFIX="/root/.wine"
+                wine reg add "HKEY_LOCAL_MACHINE\\Software\\Wine\\Drives" /v "${letter}:" /t REG_SZ /d "cdrom:$mount_point" /f 2>> "$LOG_FILE"
+
+                # Create symlink in dosdevices
+                ln -sf "$mount_point" "$DOSDEVICES/${letter}:"
+                
+                echo "[$(date)] Successfully mounted $filename to $mount_point as ${letter}:" >> "$LOG_FILE"
+                
+                ((drive_letter++))
+            else
+                echo "[$(date)] Failed to mount $filename" >> "$LOG_FILE"
+                rmdir "$mount_point"
+            fi
+        fi
+    done
+else
+    echo "[$(date)] ISO directory not found: /mnt/sdcard/wine/isos" >> "$LOG_FILE"
+fi
+
+echo "[$(date)] Wine ISO mount script completed" >> "$LOG_FILE"
 EOL
 
 echo "[$(date)] Wine installation completed" >> "$LOG_FILE"
