@@ -13,7 +13,7 @@ echo "[$(date)] Updating package lists" >> "$LOG_FILE"
 apt update >> "$LOG_FILE" 2>&1
 
 echo "[$(date)] Installing required dependencies" >> "$LOG_FILE"
-apt install -y libc6:armhf cmake gcc-arm-linux-gnueabihf xorg libncurses6 cabextract libncurses6:armhf libpng-dev:armhf libvulkan1 vulkan-tools vulkan-validationlayers libgl1-mesa-dri libgl1-mesa-glx libvulkan1:armhf mesa-vulkan-drivers:armhf  libgl1:armhf libglvnd0:armhf libglx-mesa0:armhf libglx0:armhf libx11-xcb1:armhf libxcb-dri2-0:armhf libxcb-glx0:armhf libxcb-present0:armhf libxcb-randr0:armhf libxcb-sync1:armhf libxcb-xfixes0:armhf libxshmfence1:armhf libxxf86vm1:armhf libgl1-mesa-dri:armhf libgl1:armhf qjoypad libxrandr2:armhf libxcomposite1:armhf >> "$LOG_FILE" 2>&1
+apt install -y libc6:armhf cmake gcc-arm-linux-gnueabihf xorg libncurses6 cabextract libncurses6:armhf libpng-dev:armhf libvulkan1 vulkan-tools vulkan-validationlayers libgl1-mesa-dri libgl1-mesa-glx libvulkan1:armhf mesa-vulkan-drivers:armhf  libgl1:armhf libglvnd0:armhf libglx-mesa0:armhf libglx0:armhf libx11-xcb1:armhf libxcb-dri2-0:armhf libxcb-glx0:armhf libxcb-present0:armhf libxcb-randr0:armhf libxcb-sync1:armhf libxcb-xfixes0:armhf libxshmfence1:armhf libxxf86vm1:armhf libgl1-mesa-dri:armhf libgl1:armhf qjoypad libxrandr2:armhf libxcomposite1:armhf xtightvncviewer xvfb >> "$LOG_FILE" 2>&1
 
 echo "[$(date)] Downloading Wine i386 packages" >> "$LOG_FILE"
 wget https://dl.winehq.org/wine-builds/debian/dists/bookworm/main/binary-i386/wine-stable-i386_8.0.2~bookworm-1_i386.deb >> "$LOG_FILE" 2>&1
@@ -198,6 +198,100 @@ echo "[$(date)] Xorg exited, cleaning up processes" >> /tmp/wine_startup.log
 # Make sure to clean up the monitor process when the script exits
 trap "kill $MONITOR_PID 2>/dev/null" EXIT
 killall qjoypad >> /tmp/wine_startup.log 2>&1
+
+echo "[$(date)] Script completed" >> /tmp/wine_startup.log
+EOL
+
+echo "[$(date)] Creating 1280x960 Wine launch script" >> "$LOG_FILE"
+cat > $SCRIPT_DIR/wine_desktop_1280x960.sh << 'EOL'
+#!/bin/bash
+cd /root
+
+echo "[$(date)] Starting wine startup script" >> /tmp/wine_startup.log
+
+pkill -f Xvfb
+pkill -f x11vnc
+pkill -f qjoypad
+pkill -f vncviewer
+
+Xvfb :1 -screen 0 1280x960x24 &
+sleep 3
+x11vnc -display :1 -forever -noshm -listen 0.0.0.0 -scale 0.5 &
+sleep 10
+export DISPLAY=:0
+export STARTUP="vncviewer 0.0.0.0:0 -fullscreen"
+
+# Function to check if qjoypad is running
+is_qjoypad_running() {
+    pgrep -x qjoypad >/dev/null
+}
+
+# Start the monitor process
+(
+    export DISPLAY=:0
+    while true; do
+        if ! is_qjoypad_running; then
+            qjoypad default &
+        fi
+        sleep 5
+    done
+) &
+
+# Store the monitor process ID
+MONITOR_PID=$!
+
+startx &
+
+DISPLAY=:1 wine explorer.exe /desktop=shell,1280x960
+
+pkill -f vncviewer
+
+echo "[$(date)] Script completed" >> /tmp/wine_startup.log
+EOL
+
+echo "[$(date)] Creating 1280x960 Wine launch script" >> "$LOG_FILE"
+cat > $SCRIPT_DIR/wine_desktop_1024x768.sh << 'EOL'
+#!/bin/bash
+cd /root
+
+echo "[$(date)] Starting wine startup script" >> /tmp/wine_startup.log
+
+pkill -f Xvfb
+pkill -f x11vnc
+pkill -f qjoypad
+pkill -f vncviewer
+
+Xvfb :1 -screen 0 1024x768x24 &
+sleep 3
+x11vnc -display :1 -forever -noshm -listen 0.0.0.0 -scale 0.5 &
+sleep 10
+export DISPLAY=:0
+export STARTUP="vncviewer 0.0.0.0:0 -fullscreen"
+
+# Function to check if qjoypad is running
+is_qjoypad_running() {
+    pgrep -x qjoypad >/dev/null
+}
+
+# Start the monitor process
+(
+    export DISPLAY=:0
+    while true; do
+        if ! is_qjoypad_running; then
+            qjoypad default &
+        fi
+        sleep 5
+    done
+) &
+
+# Store the monitor process ID
+MONITOR_PID=$!
+
+startx &
+
+DISPLAY=:1 wine explorer.exe /desktop=shell,1280x960
+
+pkill -f vncviewer
 
 echo "[$(date)] Script completed" >> /tmp/wine_startup.log
 EOL
