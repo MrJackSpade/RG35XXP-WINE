@@ -16,7 +16,10 @@ This script automates the installation and configuration of Wine on the RG35XX P
 > [!NOTE]
 > 2024-12-11 updates
 > 
-> - Added scripts for 1024x768 and 1280x960 screen resolutions
+> Added scripts for the following desktop resolutions to enhance game compatibility
+> - 800x600
+> - 1024x768
+> - 1280x960
 > 
 > 2024-12-10 updates
 > 
