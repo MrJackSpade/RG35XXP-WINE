@@ -14,7 +14,7 @@ This script automates the installation and configuration of Wine on the RG35XX P
 >  This is a preview build intended for tinkerers comfortable with Wine. Due to the complexity, it may not progress beyond this stage. Not everything will be plug-and-play due to Wine limitations.
 
 > [!NOTE]
-> 2024-12-10 updates
+> 2024-12-11 updates
 > 
 > - Added scripts for 1024x768 and 1280x960 screen resolutions
 > 
