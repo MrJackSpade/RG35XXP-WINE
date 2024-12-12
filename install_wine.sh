@@ -263,7 +263,7 @@ pkill -f vncviewer
 
 Xvfb :1 -screen 0 1024x768x24 &
 sleep 3
-x11vnc -display :1 -forever -noshm -listen 0.0.0.0 -scale 0.5 &
+x11vnc -display :1 -forever -noshm -listen 0.0.0.0 -scale 0.625 &
 sleep 10
 export DISPLAY=:0
 export STARTUP="vncviewer 0.0.0.0:0 -fullscreen"
