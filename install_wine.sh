@@ -249,7 +249,7 @@ pkill -f vncviewer
 echo "[$(date)] Script completed" >> /tmp/wine_startup.log
 EOL
 
-echo "[$(date)] Creating 1280x960 Wine launch script" >> "$LOG_FILE"
+echo "[$(date)] Creating 1024x768 Wine launch script" >> "$LOG_FILE"
 cat > $SCRIPT_DIR/wine_desktop_1024x768.sh << 'EOL'
 #!/bin/bash
 cd /root
@@ -289,7 +289,7 @@ MONITOR_PID=$!
 
 startx &
 
-DISPLAY=:1 wine explorer.exe /desktop=shell,1280x960
+DISPLAY=:1 wine explorer.exe /desktop=shell,1024x768
 
 pkill -f vncviewer
 
