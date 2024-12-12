@@ -242,7 +242,7 @@ MONITOR_PID=$!
 
 startx &
 
-DISPLAY=:1 wine explorer.exe /desktop=shell,1280x960
+DISPLAY=:1 LANG=en_US LANGUAGE=en_US wine explorer.exe /desktop=shell,1280x960
 
 pkill -f vncviewer
 
@@ -289,7 +289,7 @@ MONITOR_PID=$!
 
 startx &
 
-DISPLAY=:1 wine explorer.exe /desktop=shell,1024x768
+DISPLAY=:1 LANG=en_US LANGUAGE=en_US wine explorer.exe /desktop=shell,1024x768
 
 pkill -f vncviewer
 
