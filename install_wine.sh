@@ -249,6 +249,53 @@ pkill -f vncviewer
 echo "[$(date)] Script completed" >> /tmp/wine_startup.log
 EOL
 
+echo "[$(date)] Creating 800x600 Wine launch script" >> "$LOG_FILE"
+cat > $SCRIPT_DIR/wine_desktop_800x600.sh << 'EOL'
+#!/bin/bash
+cd /root
+
+echo "[$(date)] Starting wine startup script" >> /tmp/wine_startup.log
+
+pkill -f Xvfb
+pkill -f x11vnc
+pkill -f qjoypad
+pkill -f vncviewer
+
+Xvfb :1 -screen 0 800x600x24 &
+sleep 3
+x11vnc -display :1 -forever -noshm -listen 0.0.0.0 -scale 0.75 &
+sleep 10
+export DISPLAY=:0
+export STARTUP="vncviewer 0.0.0.0:0 -fullscreen"
+
+# Function to check if qjoypad is running
+is_qjoypad_running() {
+    pgrep -x qjoypad >/dev/null
+}
+
+# Start the monitor process
+(
+    export DISPLAY=:0
+    while true; do
+        if ! is_qjoypad_running; then
+            qjoypad default &
+        fi
+        sleep 5
+    done
+) &
+
+# Store the monitor process ID
+MONITOR_PID=$!
+
+startx &
+
+DISPLAY=:1 LANG=en_US LANGUAGE=en_US wine explorer.exe /desktop=shell,800x600
+
+pkill -f vncviewer
+
+echo "[$(date)] Script completed" >> /tmp/wine_startup.log
+EOL
+
 echo "[$(date)] Creating 1024x768 Wine launch script" >> "$LOG_FILE"
 cat > $SCRIPT_DIR/wine_desktop_1024x768.sh << 'EOL'
 #!/bin/bash
