@@ -16,6 +16,10 @@ This script automates the installation and configuration of Wine on the RG35XX P
 > [!NOTE]
 > 2024-12-10 updates
 > 
+> - Added scripts for 1024x768 and 1280x960 screen resolutions
+> 
+> 2024-12-10 updates
+> 
 > - Automatic ISO mounting /mnt/sdcard/wine/isos (wine_mount_isos.sh)
 > - Changed D root to /mnt/mmc/sdcard/wine/d
 > - Fixed language (text) issues
